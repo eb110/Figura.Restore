@@ -1,11 +1,12 @@
 ﻿using Figura.Restore.API.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace Figura.Restore.API.Data
 {
     public class DbInitializer
     {
-        public static void InitDb(WebApplication app)
+        public static async void InitDb(WebApplication app)
         {
             //create a scope of current app -> using for better handling of garbage collector
             using var scope = app.Services.CreateScope();
@@ -14,13 +15,40 @@ namespace Figura.Restore.API.Data
             var context = scope.ServiceProvider.GetRequiredService<StoreContext>()
                 ?? throw new InvalidOperationException("failed to retreive store context");
 
-            SeedData(context);
+            var userManager = scope.ServiceProvider.GetRequiredService<UserManager<User>>()
+                ?? throw new InvalidOperationException("failed to retreive user manager");
+
+            await SeedData(context, userManager);
         }
 
-        private static void SeedData(StoreContext context)
+        private static async Task SeedData(StoreContext context, UserManager<User> userManager)
         {
             //apply migrations if any
             context.Database.Migrate();
+
+            //identity users seed
+            if(!userManager.Users.Any())
+            {
+                var user = new User
+                {
+                    UserName = "bob@test.com",
+                    Email = "bob@test.com"
+                };
+
+                await userManager.CreateAsync(user, "Pa$$w0rd");
+                //the role has to be available in db => in our case - store context seeds it
+                await userManager.AddToRoleAsync(user, "Member");
+
+                var admin = new User
+                {
+                    UserName = "admin@test.com",
+                    Email = "admin@test.com"
+                };
+
+                await userManager.CreateAsync(admin, "Pa$$w0rd");
+                //the role has to be available in db => in our case - store context seeds it
+                await userManager.AddToRolesAsync(admin, ["Member", "Admin"]);
+            }
 
             //the task for it is to seed data if db is empty -> in this case 'project' table
             if (context.Products.Any())

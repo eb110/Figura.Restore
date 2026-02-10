@@ -1,6 +1,4 @@
-﻿using Figura.Restore.API.Entities;
-
-namespace Figura.Restore.API.DTOs
+﻿namespace Figura.Restore.API.DTOs
 {
     public class BasketItemDto
     {
