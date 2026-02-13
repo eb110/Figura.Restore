@@ -8,5 +8,8 @@
         //because of this we don't have to specifically establish dbset in dbcontext
         //ef will handle it itelf
         public List<BasketItemDto> Items { get; set; } = [];
+
+        public string? ClientSecret { get; set; }
+        public string? PaymentIntentId { get; set; }
     }
 }

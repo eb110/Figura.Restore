@@ -1,6 +1,7 @@
 using Figura.Restore.API.Data;
 using Figura.Restore.API.Entities;
 using Figura.Restore.API.Middleware;
+using Figura.Restore.API.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,8 @@ builder.Services.AddDbContext<StoreContext>(opt =>
 });
 builder.Services.AddCors();
 builder.Services.AddTransient<ExceptionMiddleware>();
+//scoped payment service => triggers for individual request when controller calls it
+builder.Services.AddScoped<PaymentsService>();
 
 //ef identity
 builder.Services.AddIdentityApiEndpoints<User>(opt =>

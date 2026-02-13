@@ -4,7 +4,6 @@ using Figura.Restore.API.Entities;
 using Figura.Restore.API.Extensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
 
 namespace Figura.Restore.API.Controllers
 {
@@ -98,10 +97,7 @@ namespace Figura.Restore.API.Controllers
 
         private async Task<Basket?> RetreiveBasket()
         {
-          var basket = await context.Baskets
-            .Include(x => x.Items)
-            .ThenInclude(x => x.Product)
-            .FirstOrDefaultAsync(x => x.BasketId == Request.Cookies["basketId"]);
+            var basket = await context.Baskets.GetBasketWithItems(Request.Cookies["basketId"]);
 
             return basket;
         }

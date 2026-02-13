@@ -10,6 +10,14 @@
         //ef will handle it itelf
         public List<BasketItem> Items { get; set; } = [];
 
+        //stripe related - oline payment solution
+        //secret used by the client to directy communicate with stripe - no api involvment
+        public string? ClientSecret { get; set; }
+
+        //needed for the update of already created stripe payment intent
+        //for example - update of the basket item count
+        public string? PaymentIntentId { get; set; }
+
         //EF will track the just obtained item from db
         //by track - it will track add or track remove
         //track the state of the entity in memory
