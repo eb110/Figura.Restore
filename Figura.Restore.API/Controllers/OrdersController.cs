@@ -13,11 +13,11 @@ namespace Figura.Restore.API.Controllers
     public class OrdersController(StoreContext context) : BaseApiController
     {
         [HttpGet]
-        public async Task<ActionResult<List<Order>>> GetOrders()
+        public async Task<ActionResult<List<OrderDto>>> GetOrders()
         {
             //only current logged user orders
             var orders = await context.Orders
-                .Include(x => x.OrderItems)
+                .ProjectToDto()            
                 //claims principal identity can be null here
                 //extension method will verify it
                 .Where(x => x.BuyerEmail.Equals(User.GetUsername())).ToListAsync();
@@ -26,10 +26,10 @@ namespace Figura.Restore.API.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<Order>> GetOrderDetails(int id)
+        public async Task<ActionResult<OrderDto>> GetOrderDetails(int id)
         {
             var order = await context.Orders
-                //.Include(x => x.OrderItems)
+                .ProjectToDto()
                 .Where(x => x.BuyerEmail.Equals(User.GetUsername()) && x.Id == id).FirstOrDefaultAsync();
 
             if (order == null) return NotFound();
@@ -38,7 +38,7 @@ namespace Figura.Restore.API.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<Order>> CreateOrder(CreateOrderDto orderDto)
+        public async Task<ActionResult<OrderDto>> CreateOrder(CreateOrderDto orderDto)
         {
             //the cookie 'basketId' travels as the reqest / response element
             //extension method of the 'Basket' 
@@ -47,6 +47,8 @@ namespace Figura.Restore.API.Controllers
             if(basket == null || basket.Items.Count == 0) return NotFound("Basket is empty or not found");
 
             var items = CreateOrderItems(basket.Items);
+
+            if (items == null || items.Count == 0 || string.IsNullOrEmpty(basket.PaymentIntentId)) return NotFound("some items out of stock");
 
             var subtotal = items.Sum(x => x.Price * x.Quantity);
             var deliveryFee = CalculateDeliveryFee(subtotal);
@@ -73,17 +75,42 @@ namespace Figura.Restore.API.Controllers
 
             //this will create a location header
             //where the client can find recently created order  
-            return CreatedAtAction(nameof(GetOrderDetails), new { id = order.Id }, order);
+            return CreatedAtAction(nameof(GetOrderDetails), new { id = order.Id }, order.ToDto());
         }
 
         private long CalculateDeliveryFee(long subtotal)
         {
-            throw new NotImplementedException();
+            return subtotal > 10000 ? 0 : 500;
         }
 
-        private List<OrderItem> CreateOrderItems(List<BasketItem> items)
+        private List<OrderItem>? CreateOrderItems(List<BasketItem> items)
         {
-            throw new NotImplementedException();
+            var list = new List<OrderItem>();
+            foreach (var item in items)
+            {
+                //business rule
+                //if stock is less then ordered value for any ordered item - return null
+                if (item.Quantity > item.Product.QuantityInStock)
+                {
+                    return null;
+                }
+
+                var orderItem = new OrderItem
+                {            
+                    ItemOrdered = new ProductItemOrdered
+                    {
+                        ProductId = item.ProductId,
+                        Name = item.Product.Name,
+                        PictureUrl = item.Product.PictureUrl
+                    },
+                    Price = item.Product.Price,
+                    Quantity = item.Quantity
+                };
+                list.Add(orderItem);
+
+                item.Product.QuantityInStock -= item.Quantity;
+            }
+            return list;
         }
     }
 }

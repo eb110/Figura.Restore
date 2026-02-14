@@ -1,0 +1,12 @@
+﻿namespace Figura.Restore.API.DTOs
+{
+    //shaped order item sent back to the client
+    public class OrderItemDto
+    {
+        public int ProductId { get; set; }
+        public required string Name { get; set; }
+        public required string PictureUrl { get; set; }
+        public long Price { get; set; }
+        public int Quentity { get; set; }
+    }
+}

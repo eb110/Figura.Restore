@@ -12,8 +12,8 @@
         public long Subtotal { get; set; }
         public long DeliveryFee { get; set; }
         public long Discount { get; set; }
-        //in theory it always should exist but as its a payment - we will be defensive here
-        public string? PaymentIntentId { get; set; }
+        //in theory it always should exist
+        public required string PaymentIntentId { get; set; }
         public OrderStatus OrderStatus { get; set; } = OrderStatus.Pending;
         //owned
         public required PaymentSummary PaymentSummary { get; set; }

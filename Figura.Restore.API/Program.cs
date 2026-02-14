@@ -49,6 +49,8 @@ app.MapControllers();
 app.MapGroup("api").MapIdentityApi<User>(); //api/login
 
 //db seed
+//this will also run db migration update if needed!!!
+//we don't have to run this command by ourself -> build of the service will trigger it
 DbInitializer.InitDb(app);
 
 app.Run();
