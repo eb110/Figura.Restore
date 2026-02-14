@@ -1,4 +1,5 @@
 ﻿using Figura.Restore.API.Entities;
+using Figura.Restore.API.Entities.OrderAggregate;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ namespace Figura.Restore.API.Data
     {
         public DbSet<Product> Products { get; set; }
         public DbSet<Basket> Baskets { get; set; }
+        public DbSet<Order> Orders { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
