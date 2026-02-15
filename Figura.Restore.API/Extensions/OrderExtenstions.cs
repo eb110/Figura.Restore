@@ -25,7 +25,7 @@ namespace Figura.Restore.API.Extensions
                     Name = item.ItemOrdered.Name,
                     PictureUrl = item.ItemOrdered.PictureUrl,
                     Price = item.Price,
-                    Quentity = item.Quantity
+                    Quantity = item.Quantity
                 }).ToList()
             }).AsNoTracking();
         }
@@ -49,7 +49,7 @@ namespace Figura.Restore.API.Extensions
                     Name = item.ItemOrdered.Name,
                     PictureUrl = item.ItemOrdered.PictureUrl,
                     Price = item.Price,
-                    Quentity = item.Quantity
+                    Quantity = item.Quantity
                 }).ToList()
             };
         }
