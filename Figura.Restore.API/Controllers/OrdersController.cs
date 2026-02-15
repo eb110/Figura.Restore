@@ -17,7 +17,7 @@ namespace Figura.Restore.API.Controllers
         {
             //only current logged user orders
             var orders = await context.Orders
-                .ProjectToDto()            
+                .ProjectToDto()
                 //claims principal identity can be null here
                 //extension method will verify it
                 .Where(x => x.BuyerEmail.Equals(User.GetUsername())).ToListAsync();
@@ -44,7 +44,7 @@ namespace Figura.Restore.API.Controllers
             //extension method of the 'Basket' 
             var basket = await context.Baskets.GetBasketWithItems(Request.Cookies["basketId"]);
 
-            if(basket == null || basket.Items.Count == 0) return NotFound("Basket is empty or not found");
+            if (basket == null || basket.Items.Count == 0) return NotFound("Basket is empty or not found");
 
             var items = CreateOrderItems(basket.Items);
 
@@ -53,22 +53,33 @@ namespace Figura.Restore.API.Controllers
             var subtotal = items.Sum(x => x.Price * x.Quantity);
             var deliveryFee = CalculateDeliveryFee(subtotal);
 
-            var order = new Order
-            {
-                OrderItems = items,
-                BuyerEmail = User.GetUsername(),
-                ShippingAddress = orderDto.ShippingAddress,
-                DeliveryFee = deliveryFee,
-                Subtotal = subtotal,
-                PaymentSummary = orderDto.PaymentSummary,
-                PaymentIntentId = basket.PaymentIntentId,
-            };
+            var order = await context.Orders
+                .Include(x => x.OrderItems)
+                .FirstOrDefaultAsync(x => x.PaymentIntentId == basket.PaymentIntentId);
 
-            context.Orders.Add(order);
-            //the order is finished - remove the basket!!!
-            context.Baskets.Remove(basket);
-            //the order is finished - remove the cookie!!!
-            Response.Cookies.Delete("basketId");
+            //new order
+            if (order == null)
+            {
+                order = new Order
+                {
+                    OrderItems = items,
+                    BuyerEmail = User.GetUsername(),
+                    ShippingAddress = orderDto.ShippingAddress,
+                    DeliveryFee = deliveryFee,
+                    Subtotal = subtotal,
+                    PaymentSummary = orderDto.PaymentSummary,
+                    PaymentIntentId = basket.PaymentIntentId,
+                };
+
+                context.Orders.Add(order);
+            }
+            else
+            {
+                //order items could be changed
+                order.OrderItems = items;
+            }
+            
+            //basket removal is handled by the payment controller (stripe webhood workaround)
 
             var result = await context.SaveChangesAsync() > 0;
             if (!result) return BadRequest("problem creating order");
@@ -96,7 +107,7 @@ namespace Figura.Restore.API.Controllers
                 }
 
                 var orderItem = new OrderItem
-                {            
+                {
                     ItemOrdered = new ProductItemOrdered
                     {
                         ProductId = item.ProductId,
