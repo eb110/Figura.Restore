@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Figura.Restore.API.Data.Migrations
 {
     [DbContext(typeof(StoreContext))]
-    [Migration("20260214134241_OrderEntityAdded")]
-    partial class OrderEntityAdded
+    [Migration("20260216145227_SqlServerInitial")]
+    partial class SqlServerInitial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -140,6 +140,7 @@ namespace Figura.Restore.API.Data.Migrations
                         .HasColumnType("int");
 
                     b.Property<string>("PaymentIntentId")
+                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<long>("Subtotal")
@@ -463,10 +464,12 @@ namespace Figura.Restore.API.Data.Migrations
                                 .HasColumnType("nvarchar(max)");
 
                             b1.Property<int>("ExpMonth")
-                                .HasColumnType("int");
+                                .HasColumnType("int")
+                                .HasAnnotation("Relational:JsonPropertyName", "exp_month");
 
                             b1.Property<int>("ExpYear")
-                                .HasColumnType("int");
+                                .HasColumnType("int")
+                                .HasAnnotation("Relational:JsonPropertyName", "exp_year");
 
                             b1.Property<int>("Last4")
                                 .HasColumnType("int");

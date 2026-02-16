@@ -6,7 +6,7 @@ namespace Figura.Restore.API.Data
 {
     public class DbInitializer
     {
-        public static async void InitDb(WebApplication app)
+        public static async Task InitDb(WebApplication app)
         {
             //create a scope of current app -> using for better handling of garbage collector
             using var scope = app.Services.CreateScope();

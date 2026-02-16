@@ -461,10 +461,12 @@ namespace Figura.Restore.API.Data.Migrations
                                 .HasColumnType("nvarchar(max)");
 
                             b1.Property<int>("ExpMonth")
-                                .HasColumnType("int");
+                                .HasColumnType("int")
+                                .HasAnnotation("Relational:JsonPropertyName", "exp_month");
 
                             b1.Property<int>("ExpYear")
-                                .HasColumnType("int");
+                                .HasColumnType("int")
+                                .HasAnnotation("Relational:JsonPropertyName", "exp_year");
 
                             b1.Property<int>("Last4")
                                 .HasColumnType("int");
