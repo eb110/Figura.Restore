@@ -27,7 +27,7 @@ jobs:
         run: |
           cd Figura.Restore.Website
           cd client
-          npm install
+          npm install --legacy-peer-deps
           npm run build
 
       - name: Set up .NET Core
