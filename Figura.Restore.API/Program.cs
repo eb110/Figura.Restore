@@ -59,6 +59,6 @@ app.MapFallbackToController("Index", "Fallback");
 //db seed
 //this will also run db migration update if needed!!!
 //we don't have to run this command by ourself -> build of the service will trigger it
-DbInitializer.InitDb(app);
+await DbInitializer.InitDb(app);
 
 app.Run();
