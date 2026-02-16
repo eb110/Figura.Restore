@@ -30,7 +30,12 @@ builder.Services.AddIdentityApiEndpoints<User>(opt =>
 //middleware -> send / receive http response / request
 var app = builder.Build();
 
+//one of the first functionality in server flow - should be at the top of the queue
 app.UseMiddleware<ExceptionMiddleware>();
+
+//related to client published application
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseCors(opt =>
 {
@@ -47,6 +52,9 @@ app.MapControllers();
 
 //EF identity => gives all of the EF Identity ready made endpoints
 app.MapGroup("api").MapIdentityApi<User>(); //api/login
+
+//client routing
+app.MapFallbackToController("Index", "Fallback");
 
 //db seed
 //this will also run db migration update if needed!!!
