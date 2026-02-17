@@ -1,7 +1,26 @@
-﻿namespace Figura.Restore.API.DTOs
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Figura.Restore.API.DTOs
 {
-    public class UpdateProductDto : CreateProductDto
+    public class UpdateProductDto
     {
         public int Id { get; set; }
+        [Required]
+        public string Name { get; set; } = string.Empty;
+        [Required]
+        public string Description { get; set; } = string.Empty;
+        [Required]
+        [Range(100, double.PositiveInfinity)]
+        public long Price { get; set; }
+        [Required]
+        public string Type { get; set; } = string.Empty;
+        [Required]
+        public string Brand { get; set; } = string.Empty;
+        [Required]
+        [Range(0, int.MaxValue)]
+        public int QuantityInStock { get; set; }
+
+        //no need to provide the file during the update
+        public IFormFile? File { get; set; }
     }
 }

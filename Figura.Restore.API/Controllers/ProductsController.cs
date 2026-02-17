@@ -4,13 +4,15 @@ using Figura.Restore.API.DTOs;
 using Figura.Restore.API.Entities;
 using Figura.Restore.API.Extensions;
 using Figura.Restore.API.RequestHelpers;
+using Figura.Restore.API.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Figura.Restore.API.Controllers
 {
-    public class ProductsController(StoreContext context, IMapper mapper) : BaseApiController
+    //image service is needed as product contains cloudinary server picture id
+    public class ProductsController(StoreContext context, IMapper mapper, ImageService imageService) : BaseApiController
     {
 
         [HttpGet]
@@ -56,7 +58,22 @@ namespace Figura.Restore.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Product>> CreateProduct(CreateProductDto productDto)
         {
-            Product product = mapper.Map<Product>(productDto);  
+            Product product = mapper.Map<Product>(productDto); 
+            
+            if(productDto.File != null)
+            {
+                var imageResult = await imageService.AddImageAsync(productDto.File);
+
+                //error from cloudinary
+                if(imageResult.Error != null)
+                {
+                    return BadRequest(imageResult.Error.Message);
+                }
+
+                //strict uri on the cloudinary server of a file (product picture)
+                product.PictureUrl = imageResult.SecureUrl.AbsoluteUri;
+                product.PublicId = imageResult.PublicId;
+            }
 
             context.Products.Add(product);
 
@@ -81,6 +98,26 @@ namespace Figura.Restore.API.Controllers
             //automatic update (map) -> tracked by ef as well
             mapper.Map(productDto, product);
 
+            if (productDto.File != null)
+            {
+                var imageResult = await imageService.AddImageAsync(productDto.File);
+
+                //error from cloudinary
+                if (imageResult.Error != null)
+                {
+                    return BadRequest(imageResult.Error.Message);
+                }
+
+                //if the product consist the image id -> we want to delete image from cloudinary server
+                if(!string.IsNullOrEmpty(product.PublicId))
+                {
+                    await imageService.DeleteImageAsync(product.PublicId);
+                }
+
+                //strict uri on the cloudinary server of a file (product picture)
+                product.PictureUrl = imageResult.SecureUrl.AbsoluteUri;
+                product.PublicId = imageResult.PublicId;
+            }
 
             var result = await context.SaveChangesAsync() > 0;
 
@@ -100,6 +137,11 @@ namespace Figura.Restore.API.Controllers
             var product = await context.Products.FindAsync(id);
 
             if (product == null) return NotFound();
+
+            if (!string.IsNullOrEmpty(product.PublicId))
+            {
+                await imageService.DeleteImageAsync(product.PublicId);
+            }
 
             context.Products.Remove(product);
 
