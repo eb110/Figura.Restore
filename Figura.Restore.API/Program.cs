@@ -1,10 +1,10 @@
 using Figura.Restore.API.Data;
 using Figura.Restore.API.Entities;
 using Figura.Restore.API.Middleware;
+using Figura.Restore.API.RequestHelpers;
 using Figura.Restore.API.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,12 +15,18 @@ builder.Services.AddDbContext<StoreContext>(opt =>
 });
 builder.Services.AddCors();
 
+//cloudinary appsettings section access -> different approach
+builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("Cloudinary"));
+
 //autonomy project -> current domain
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddTransient<ExceptionMiddleware>();
 //scoped payment service => triggers for individual request when controller calls it
 builder.Services.AddScoped<PaymentsService>();
+
+//scoped cloudinry service (file online store solution)
+builder.Services.AddScoped<ImageService>();
 
 //ef identity
 builder.Services.AddIdentityApiEndpoints<User>(opt =>
