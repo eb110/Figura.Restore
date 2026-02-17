@@ -4,6 +4,7 @@ using Figura.Restore.API.Middleware;
 using Figura.Restore.API.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,10 @@ builder.Services.AddDbContext<StoreContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 builder.Services.AddCors();
+
+//autonomy project -> current domain
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
 builder.Services.AddTransient<ExceptionMiddleware>();
 //scoped payment service => triggers for individual request when controller calls it
 builder.Services.AddScoped<PaymentsService>();

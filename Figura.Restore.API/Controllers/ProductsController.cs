@@ -1,13 +1,16 @@
-﻿using Figura.Restore.API.Data;
+﻿using AutoMapper;
+using Figura.Restore.API.Data;
+using Figura.Restore.API.DTOs;
 using Figura.Restore.API.Entities;
 using Figura.Restore.API.Extensions;
 using Figura.Restore.API.RequestHelpers;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace Figura.Restore.API.Controllers
 {
-    public class ProductsController(StoreContext context) : BaseApiController
+    public class ProductsController(StoreContext context, IMapper mapper) : BaseApiController
     {
 
         [HttpGet]
@@ -47,6 +50,47 @@ namespace Figura.Restore.API.Controllers
             var types = await context.Products.Select(x => x.Type).Distinct().ToListAsync();
 
             return Ok(new { brands, types });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPost]
+        public async Task<ActionResult<Product>> CreateProduct(CreateProductDto productDto)
+        {
+            Product product = mapper.Map<Product>(productDto);  
+
+            context.Products.Add(product);
+
+            var result = await context.SaveChangesAsync() > 0;
+
+            if(result)
+            {
+                return CreatedAtAction(nameof(GetProductById), new {Id = product.Id}, product);
+            }
+
+            return BadRequest("Problem creating new product");
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpPut]
+        public async Task<ActionResult> UpdateProduct(UpdateProductDto productDto)
+        {
+            var product = await context.Products.FindAsync(productDto.Id);
+
+            if (product == null) return NotFound();
+
+            //automatic update (map) -> tracked by ef as well
+            mapper.Map(productDto, product);
+
+
+            var result = await context.SaveChangesAsync() > 0;
+
+            if (result)
+            {
+                //its an update - we don't have to send anything back
+                return NoContent();
+            }
+
+            return BadRequest("Problem updating product");
         }
     }
 }
