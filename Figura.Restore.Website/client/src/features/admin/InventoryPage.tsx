@@ -16,6 +16,8 @@ import { currencyFormat } from "../../lib/util";
 import { Delete, Edit } from "@mui/icons-material";
 import AppPagination from "../../app/shared/components/AppPagination";
 import { setPageNumber } from "../catalog/catalogSlice";
+import { useState } from "react";
+import ProductForm from "./ProductForm";
 
 export default function InventoryPage() {
   //product params needed for products
@@ -27,13 +29,22 @@ export default function InventoryPage() {
   //needed for pagination
   const dispatch = useAppDispatch();
 
+  //form display state
+  const [editMode, setEditMode] = useState(false);
+  if (editMode) return <ProductForm />;
+
   return (
     <>
       <Box display="flex" justifyContent="space-between">
         <Typography sx={{ p: 2 }} variant="h4">
           Inventory
         </Typography>
-        <Button sx={{ m: 2 }} size="large" variant="contained">
+        <Button
+          sx={{ m: 2 }}
+          size="large"
+          variant="contained"
+          onClick={() => setEditMode(true)}
+        >
           Create
         </Button>
       </Box>
@@ -88,7 +99,7 @@ export default function InventoryPage() {
               ))}
           </TableBody>
         </Table>
-        <Box>
+        <Box sx={{ p: 3 }}>
           {data?.pagination && data.items.length > 0 && (
             <AppPagination
               metadata={data.pagination}
