@@ -19,6 +19,7 @@ import { setPageNumber } from "../catalog/catalogSlice";
 import { useState } from "react";
 import ProductForm from "./ProductForm";
 import type { Product } from "../../app/models/product";
+import { useDeleteProductMutation } from "./adminApi";
 
 export default function InventoryPage() {
   //product params needed for products
@@ -26,6 +27,11 @@ export default function InventoryPage() {
 
   //products and pagination
   const { data, refetch } = useFetchProductsQuery(productParams);
+
+  //delete of the product => it requires rerender of the products ->
+  //we cant play witch cache as this apiQuery does not have the access to product fetch
+  //what we can do is to utilise 'refetch'
+  const [deleteProduct] = useDeleteProductMutation();
 
   //needed for pagination
   const dispatch = useAppDispatch();
@@ -50,6 +56,15 @@ export default function InventoryPage() {
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
     setEditMode(true);
+  };
+
+  const handleProductDelete = async (id: number) => {
+    try {
+      await deleteProduct(id);
+      refetch();
+    } catch (error) {
+      console.log(error);
+    }
   };
 
   return (
@@ -115,7 +130,11 @@ export default function InventoryPage() {
                       onClick={() => handleSelectProduct(product)}
                       startIcon={<Edit />}
                     />
-                    <Button startIcon={<Delete />} color="error" />
+                    <Button
+                      onClick={() => handleProductDelete(product.id)}
+                      startIcon={<Delete />}
+                      color="error"
+                    />
                   </TableCell>
                 </TableRow>
               ))}
