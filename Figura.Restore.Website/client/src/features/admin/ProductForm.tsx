@@ -8,12 +8,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import AppTextInput from "../../app/shared/components/AppTextInput";
 import { useFetchFiltersQuery } from "../catalog/catalogApi";
 import AppSelectInput from "../../app/shared/components/AppSelectInput";
+import AppDropzone from "../../app/shared/components/AppDropzone";
 
 export default function ProductForm() {
   //have to fetch types and brands for dropdown menu
   const { data } = useFetchFiltersQuery();
 
-  const { control, handleSubmit } = useForm<CreateProductSchema>({
+  //watch is needed for File preview
+  const { control, handleSubmit, watch } = useForm<CreateProductSchema>({
     mode: "onTouched",
     //this in fact is the validator
     resolver: zodResolver(createProductSchema),
@@ -21,6 +23,12 @@ export default function ProductForm() {
     //defaultValues: {name: "",},
     //can be overulled by default value injected straight to the field controller
   });
+
+  //'file' comes from the zod File parameter 'file'
+  //so in face we are informing useForm to 'watch' one of its field
+  //that is declared by zod which name is 'file'
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const watchFile = watch("file");
 
   const onSubmit = (data: CreateProductSchema) => {
     console.log(data);
@@ -81,8 +89,21 @@ export default function ProductForm() {
               rows={4}
             />
           </Grid2>
-          <Grid2 size={12}>
-            <AppTextInput control={control} name="file" label="Image" />
+          <Grid2
+            size={12}
+            display="flex"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <AppDropzone name="file" control={control} />
+            {watchFile && (
+              <img
+                //src={watchFile.preview}
+                src={URL.createObjectURL(watchFile)}
+                alt="preview of image"
+                style={{ maxHeight: 200 }}
+              />
+            )}
           </Grid2>
         </Grid2>
         <Box display="flex" justifyContent="space-between" sx={{ mt: 3 }}>

@@ -3,7 +3,13 @@ import { z } from 'zod';
 //file initial schema
 const fileSchema = z.instanceof(File).refine(file => file.size > 0, {
     message: 'A file must be uploaded'
-});
+    //we want to add extra parameter to the 'File' type of zod
+})
+//.transform(file => ({
+//    ...file,
+//so now the zod provides as a type for file: File type plus preview parameter
+//    preview: URL.createObjectURL(file)
+//}));
 
 //parameters are in fact fields of the form - each are going to be validate based on rules
 export const createProductSchema = z.object({
