@@ -9,13 +9,22 @@ import AppTextInput from "../../app/shared/components/AppTextInput";
 import { useFetchFiltersQuery } from "../catalog/catalogApi";
 import AppSelectInput from "../../app/shared/components/AppSelectInput";
 import AppDropzone from "../../app/shared/components/AppDropzone";
+import type { Product } from "../../app/models/product";
+import { useEffect } from "react";
 
-export default function ProductForm() {
+type Props = {
+  setEditMode: (value: boolean) => void;
+  product: Product | null;
+};
+
+export default function ProductForm({ setEditMode, product }: Props) {
   //have to fetch types and brands for dropdown menu
   const { data } = useFetchFiltersQuery();
 
   //watch is needed for File preview
-  const { control, handleSubmit, watch } = useForm<CreateProductSchema>({
+  //reset is for edition in case the component got already a product as a paramter
+  //this is why useEffect triggers reset
+  const { control, handleSubmit, watch, reset } = useForm<CreateProductSchema>({
     mode: "onTouched",
     //this in fact is the validator
     resolver: zodResolver(createProductSchema),
@@ -29,6 +38,11 @@ export default function ProductForm() {
   //that is declared by zod which name is 'file'
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchFile = watch("file");
+
+  //needed for the edition state
+  useEffect(() => {
+    if (product) reset(product);
+  }, [product, reset]);
 
   const onSubmit = (data: CreateProductSchema) => {
     console.log(data);
@@ -96,10 +110,15 @@ export default function ProductForm() {
             alignItems="center"
           >
             <AppDropzone name="file" control={control} />
-            {watchFile && (
+            {watchFile ? (
               <img
-                //src={watchFile.preview}
                 src={URL.createObjectURL(watchFile)}
+                alt="preview of image"
+                style={{ maxHeight: 200 }}
+              />
+            ) : (
+              <img
+                src={product?.pictureUrl}
                 alt="preview of image"
                 style={{ maxHeight: 200 }}
               />
@@ -107,7 +126,11 @@ export default function ProductForm() {
           </Grid2>
         </Grid2>
         <Box display="flex" justifyContent="space-between" sx={{ mt: 3 }}>
-          <Button variant="contained" color="inherit">
+          <Button
+            onClick={() => setEditMode(false)}
+            variant="contained"
+            color="inherit"
+          >
             Cancel
           </Button>
           <Button variant="contained" color="success" type="submit">

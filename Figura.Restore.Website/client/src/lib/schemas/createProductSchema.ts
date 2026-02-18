@@ -23,8 +23,17 @@ export const createProductSchema = z.object({
     type: z.string({ error: 'Type is required' }),
     brand: z.string({ error: 'Brand is required' }),
     quantityInStock: z.coerce.number<number>({ error: 'Quantity is required' }).min(1, 'Quantity must be at least 1'),
-    //file handling
-    file: fileSchema
+    //optional as if this is a new product then we can not have the url
+    //so this paramter is for edition of existing product
+    pictureUrl: z.string().optional(),
+    //file handling => optional in case it's edition of existing product
+    //be is not sending back the file -> it sends back the url
+    file: fileSchema.optional()
 })
+    //we want to trigger validation for file
+    .refine((data) => data.pictureUrl || data.file, {
+        message: 'Please provide an image',
+        path: ['file']
+    })
 
 export type CreateProductSchema = z.infer<typeof createProductSchema>;
