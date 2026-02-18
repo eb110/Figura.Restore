@@ -3,7 +3,7 @@ import {
   createProductSchema,
   type CreateProductSchema,
 } from "../../lib/schemas/createProductSchema";
-import { useForm } from "react-hook-form";
+import { useForm, type FieldValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import AppTextInput from "../../app/shared/components/AppTextInput";
 import { useFetchFiltersQuery } from "../catalog/catalogApi";
@@ -11,20 +11,42 @@ import AppSelectInput from "../../app/shared/components/AppSelectInput";
 import AppDropzone from "../../app/shared/components/AppDropzone";
 import type { Product } from "../../app/models/product";
 import { useEffect } from "react";
+import { useCreateProductMutation, useUpdateProductMutation } from "./adminApi";
+import { LoadingButton } from "@mui/lab";
+import { handleApiError } from "../../lib/util";
 
 type Props = {
   setEditMode: (value: boolean) => void;
   product: Product | null;
+  //needed for periodic refresh
+  //different approach then on/off rtq_query caching
+  refetch: () => void;
+  //reset of the product form due to successful product submit
+  setSelectedProduct: (value: Product | null) => void;
 };
 
-export default function ProductForm({ setEditMode, product }: Props) {
+export default function ProductForm({
+  setEditMode,
+  product,
+  refetch,
+  setSelectedProduct,
+}: Props) {
   //have to fetch types and brands for dropdown menu
   const { data } = useFetchFiltersQuery();
 
   //watch is needed for File preview
   //reset is for edition in case the component got already a product as a paramter
   //this is why useEffect triggers reset
-  const { control, handleSubmit, watch, reset } = useForm<CreateProductSchema>({
+  //issubmitting just for testing -> triggered by submit button
+  //setError needed by the generic react form error handler
+  const {
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    setError,
+    formState: { isSubmitting },
+  } = useForm<CreateProductSchema>({
     mode: "onTouched",
     //this in fact is the validator
     resolver: zodResolver(createProductSchema),
@@ -39,13 +61,70 @@ export default function ProductForm({ setEditMode, product }: Props) {
   // eslint-disable-next-line react-hooks/incompatible-library
   const watchFile = watch("file");
 
+  const [createProduct] = useCreateProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
+
   //needed for the edition state
   useEffect(() => {
+    //update only -> if useEffect triggered it means something has been changed
+    //and reset is needed
     if (product) reset(product);
-  }, [product, reset]);
 
-  const onSubmit = (data: CreateProductSchema) => {
-    console.log(data);
+    //file handling always require cleanup
+    //during the component disposal =>
+    return () => {
+      if (watchFile) URL.revokeObjectURL(URL.createObjectURL(watchFile));
+    };
+  }, [product, reset, watchFile]);
+
+  //the problem is that by default our object (data) is sent content-type application/json
+  //it consist a file so it has to be a content-type FormData
+  //once again => react form bases on FieldValues!!!
+  const createFormData = (items: FieldValues) => {
+    //on the be we are expecting a solid parameter from the FE -> CreateProductSchema
+    //it strictly relates to UpdateProductDto (all required parameters with proper types and names)
+    //content-type FormData requires FormData type
+    //the solution is to apply all parameters and values to new FormData
+    const formData = new FormData();
+    for (const key in items) {
+      formData.append(key, items[key]);
+    }
+    //now we have a formData which in fact is almost a 1 to 1 back end UpdateProductDto
+    //the only missing paramter is Id but we will add it in adminApi rtq query file
+    return formData;
+  };
+
+  const onSubmit = async (data: CreateProductSchema) => {
+    try {
+      const formData = createFormData(data);
+
+      //in case the file upload issues (timing)
+      if (watchFile) formData.append("file", watchFile);
+
+      //unwrap for error handler
+      if (product)
+        await updateProduct({ id: product.id, data: formData }).unwrap();
+      else await createProduct(formData).unwrap();
+      //in case of edition -> this is the last resort so:
+      setEditMode(false);
+      //product submit => reset form to initial default state
+      setSelectedProduct(null);
+      //new stuff added -> refetch to populate just created / updated product
+      refetch();
+    } catch (error) {
+      console.log(error);
+      //zod parameters as array (field names)
+      handleApiError<CreateProductSchema>(error, setError, [
+        "brand",
+        "type",
+        "description",
+        "file",
+        "name",
+        "pictureUrl",
+        "quantityInStock",
+        "price",
+      ]);
+    }
   };
 
   return (
@@ -113,16 +192,16 @@ export default function ProductForm({ setEditMode, product }: Props) {
             {watchFile ? (
               <img
                 src={URL.createObjectURL(watchFile)}
-                alt="preview of image"
+                alt="preview of image dupa"
                 style={{ maxHeight: 200 }}
               />
-            ) : (
+            ) : product?.pictureUrl ? (
               <img
                 src={product?.pictureUrl}
                 alt="preview of image"
                 style={{ maxHeight: 200 }}
               />
-            )}
+            ) : null}
           </Grid2>
         </Grid2>
         <Box display="flex" justifyContent="space-between" sx={{ mt: 3 }}>
@@ -133,9 +212,14 @@ export default function ProductForm({ setEditMode, product }: Props) {
           >
             Cancel
           </Button>
-          <Button variant="contained" color="success" type="submit">
+          <LoadingButton
+            variant="contained"
+            color="success"
+            type="submit"
+            loading={isSubmitting}
+          >
             Submit
-          </Button>
+          </LoadingButton>
         </Box>
       </form>
     </Box>

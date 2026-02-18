@@ -25,7 +25,7 @@ export default function InventoryPage() {
   const productParams = useAppSelector((state) => state.catalog);
 
   //products and pagination
-  const { data } = useFetchProductsQuery(productParams);
+  const { data, refetch } = useFetchProductsQuery(productParams);
 
   //needed for pagination
   const dispatch = useAppDispatch();
@@ -37,7 +37,15 @@ export default function InventoryPage() {
   //form display state
   const [editMode, setEditMode] = useState(false);
   if (editMode)
-    return <ProductForm setEditMode={setEditMode} product={selectedProduct} />;
+    return (
+      <ProductForm
+        setEditMode={setEditMode}
+        product={selectedProduct}
+        refetch={refetch}
+        //reset to empty values after successful product submit
+        setSelectedProduct={setSelectedProduct}
+      />
+    );
 
   const handleSelectProduct = (product: Product) => {
     setSelectedProduct(product);
